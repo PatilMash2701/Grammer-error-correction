@@ -1,0 +1,13 @@
+# Exclude local env files — in Docker, Nginx proxies /api → backend:8000
+# so VITE_API_BASE_URL should be the relative default "/api/v1"
+.env
+.env.local
+.env.*.local
+
+# Build artifacts and deps (re-installed during build)
+node_modules/
+dist/
+
+# IDE / OS
+.vscode/
+.DS_Store

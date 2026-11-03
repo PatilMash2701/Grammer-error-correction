@@ -1,0 +1,87 @@
+# =====================================================
+# Grammar Correction System — Docker Compose
+# =====================================================
+# Services:
+#   backend  — FastAPI + 3 GEC models (T5, Llama, CoEdIT)
+#   frontend — React app served by Nginx (proxies /api → backend)
+#
+# Requirements:
+#   - Docker Engine 24+
+#   - NVIDIA Container Toolkit (for GPU inference)
+#     Install: https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html
+#
+# Usage:
+#   docker compose up --build          # build and start
+#   docker compose up -d               # start detached
+#   docker compose logs -f backend     # tail backend logs
+#   docker compose down                # stop
+
+version: '3.8'
+
+services:
+
+  # --------------------------------------------------
+  # Backend: FastAPI serving T5 + Llama + CoEdIT models
+  # --------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gec_backend
+    ports:
+      - "9000:8000"     # External :9000 → internal :8000 (avoids conflicts with other local apps)
+    volumes:
+      # Model checkpoints (LoRA adapters + base weights) — mounted read-only
+      - ./checkpoints:/app/checkpoints:ro
+      # HuggingFace cache — reuses downloads across container restarts
+      - huggingface_cache:/root/.cache/huggingface
+    environment:
+      # Model paths (relative to /app, which is the WORKDIR)
+      MODEL_PATH: checkpoints/flan_t5_large_bea2019/llama_gec_lora
+      LLAMA32_MODEL_PATH: checkpoints/llama32_bea2019/llama_gec_lora
+      COEDIT_PATH: grammarly/coedit-large
+      # CORS — frontend origin (port 3000 from this compose, 5173 for local dev)
+      CORS_ORIGINS: "http://localhost:3000,http://localhost:5173,http://localhost:9000,http://frontend:80"
+      API_HOST: "0.0.0.0"
+      API_PORT: "8000"
+      # HuggingFace token — needed to download gated models (Llama)
+      # Set HF_TOKEN in a .env file at project root or export it before compose up
+      HF_TOKEN: ${HF_TOKEN:-}
+    # GPU access — requires NVIDIA Container Toolkit on the host
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/v1/health')"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s   # Models take ~60-90s to load
+      retries: 3
+
+  # --------------------------------------------------
+  # Frontend: React SPA served by Nginx
+  # Nginx proxies /api/* → backend:8000
+  # --------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      # VITE_API_BASE_URL intentionally not set here — Nginx handles /api proxy
+      # so the fallback "/api/v1" in api.ts is exactly what we want
+    container_name: gec_frontend
+    ports:
+      - "3000:80"       # External :3000 → Nginx :80
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  # Named volume for HuggingFace model cache (persists across rebuilds)
+  huggingface_cache:

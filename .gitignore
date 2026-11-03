@@ -1,0 +1,72 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Model artifacts
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+checkpoints/
+model_outputs/
+
+# Data
+data/
+
+# Experiment tracking
+wandb/
+mlruns/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+
+# Docker
+.docker/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Debug/session scripts (not part of project)
+check_status.py
+check_routes.py
+
+# Temp files from shell sessions
+tmpclaude-*
+nul
+=*

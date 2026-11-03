@@ -1,0 +1,48 @@
+# Backend Docker context exclusions
+# Keeps the build context small — only src/ and config files are needed
+# Checkpoints and data are volume-mounted at runtime
+
+# Large model/data directories (mounted as volumes)
+checkpoints/
+data/
+
+# Frontend (separate Docker context)
+frontend/
+
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+.eggs/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Training logs and outputs
+*.log
+training_llama32.log
+evaluation_llama32.log
+
+# Environment secrets
+.env
+.env.local
+
+# Notebooks and scripts (not needed for API)
+notebooks/
+scripts/
+
+# Git
+.git/
+.github/
+
+# IDE
+.vscode/
+.idea/
+
+# Documentation
+documentation/
+README.md
